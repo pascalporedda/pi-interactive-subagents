@@ -169,6 +169,32 @@ function getAgentConfigDir(): string {
   return process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
 }
 
+/**
+ * Resolve the bash-guard extension file to load into subagent processes.
+ *
+ * Restricted spawns run with `--no-extensions`, which drops every global
+ * extension — including bash-guard, which registers no tool and would never
+ * be re-enabled by the tool-backed `-e` whitelist. We therefore re-enable it
+ * explicitly so every subagent gets its headless hard-block floor
+ * (PI_BASH_GUARD_MODE=loose: recursive `rm`, disk/filesystem wipes only).
+ *
+ * Checked against the config dir the child will actually see (agentDir, which
+ * may be a target-local `.pi/agent/`), falling back to the global dir when the
+ * local one has no bash-guard. Returns null when bash-guard isn't installed —
+ * a missing guard must never break the spawn itself.
+ */
+function getBashGuardExtensionPath(agentDir: string | null): string | null {
+  const candidates = [
+    agentDir ? join(agentDir, "extensions", "bash-guard", "index.ts") : null,
+    join(getAgentConfigDir(), "extensions", "bash-guard", "index.ts"),
+    join(homedir(), ".pi", "agent", "extensions", "bash-guard", "index.ts"),
+  ].filter((p): p is string => p !== null);
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
 // ── Runtime tool-extension registration ─────────────────────────────────────
 // `getToolExtensionPath` otherwise only knows a closed set of tool names. Other
 // pi extensions that bundle a tool for subagents (e.g. a project-local
@@ -872,6 +898,14 @@ function applySandboxToParts(
     for (const extPath of extPaths) {
       parts.push("-e", shellEscape(extPath));
     }
+
+    // Re-enable bash-guard even though it registers no tool: with global
+    // discovery disabled it would otherwise be silently dropped, leaving
+    // subagents without the loose hard-block floor (recursive rm, disk wipes).
+    const bashGuardPath = getBashGuardExtensionPath(loadout.agentDir);
+    if (bashGuardPath) {
+      parts.push("-e", shellEscape(bashGuardPath));
+    }
   }
 }
 
@@ -1377,6 +1411,14 @@ async function launchSubagent(
   envParts.push(`PI_SUBAGENT_ID=${shellEscape(id)}`);
   envParts.push(`PI_SUBAGENT_ACTIVITY_FILE=${shellEscape(activityFile)}`);
   envParts.push(`PI_SUBAGENT_SURFACE=${shellEscape(surface)}`);
+  // Depth for nested-spawn detection (bash-guard branches on this): the child
+  // is always at least one level deeper than this process.
+  const parentDepth = Number.parseInt(process.env.PI_SUBAGENT_DEPTH ?? "0", 10);
+  envParts.push(`PI_SUBAGENT_DEPTH=${shellEscape(String(Number.isFinite(parentDepth) ? parentDepth + 1 : 1))}`);
+  // Run bash-guard's headless floor in "loose" mode: subagents are autonomous,
+  // so only the truly unrecoverable patterns (recursive rm, disk wipes) are
+  // hard-blocked — not sudo, pipes, git, or other routine operations.
+  envParts.push(`PI_BASH_GUARD_MODE=loose`);
   const envPrefix = envParts.join(" ") + " ";
 
   // Pass task and skill prompts to the sub-agent.
@@ -2203,6 +2245,14 @@ export default function subagentsExtension(pi: ExtensionAPI) {
         resumeEnvParts.push(`PI_SUBAGENT_SESSION=${shellEscape(sessionPath)}`);
         resumeEnvParts.push(`PI_SUBAGENT_ID=${shellEscape(id)}`);
         resumeEnvParts.push(`PI_SUBAGENT_ACTIVITY_FILE=${shellEscape(activityFile)}`);
+        // Replay the sandbox's depth + bash-guard mode so a resumed subagent
+        // keeps the same nested-spawn detection and loose hard-block floor it
+        // originally ran with.
+        const resumeParentDepth = Number.parseInt(process.env.PI_SUBAGENT_DEPTH ?? "0", 10);
+        resumeEnvParts.push(
+          `PI_SUBAGENT_DEPTH=${shellEscape(String(Number.isFinite(resumeParentDepth) ? resumeParentDepth + 1 : 1))}`,
+        );
+        resumeEnvParts.push(`PI_BASH_GUARD_MODE=loose`);
         if (autoExit) {
           resumeEnvParts.push(`PI_SUBAGENT_AUTO_EXIT=1`);
         }
