@@ -632,7 +632,7 @@ describe("session.ts", () => {
     it("aggregates tokens/cost cumulatively and tracks last context size", () => {
       const file = createSessionFile(dir, [
         SESSION_HEADER,
-        { type: "model_change", id: "mc-001", parentId: null, modelId: "claude-sonnet-4-6" },
+        { type: "model_change", id: "mc-001", parentId: null, modelId: "glm-5.3-flash" },
         USER_MSG,
         asstWithUsage("a1", {
           tools: ["read", "grep"],
@@ -644,7 +644,7 @@ describe("session.ts", () => {
         }),
       ]);
       const stats = summarizeSessionStats(file)!;
-      assert.equal(stats.model, "claude-sonnet-4-6");
+      assert.equal(stats.model, "glm-5.3-flash");
       assert.equal(stats.toolCount, 3);
       assert.equal(stats.inputTokens, 130);
       assert.equal(stats.outputTokens, 120);
@@ -658,10 +658,10 @@ describe("session.ts", () => {
     it("prefers per-message model over model_change", () => {
       const file = createSessionFile(dir, [
         SESSION_HEADER,
-        { type: "model_change", id: "mc-001", parentId: null, modelId: "claude-haiku-4-5" },
-        asstWithUsage("a1", { model: "claude-sonnet-4-6", usage: { totalTokens: 10, cost: { total: 0 } } }),
+        { type: "model_change", id: "mc-001", parentId: null, modelId: "glm-5.3-flash" },
+        asstWithUsage("a1", { model: "glm-5.3-flash", usage: { totalTokens: 10, cost: { total: 0 } } }),
       ]);
-      assert.equal(summarizeSessionStats(file)!.model, "claude-sonnet-4-6");
+      assert.equal(summarizeSessionStats(file)!.model, "glm-5.3-flash");
     });
 
     it("handles missing usage gracefully", () => {
@@ -1075,7 +1075,7 @@ describe("subagent discovery", () => {
         "lineage-mode-test-agent",
         [
           "name: lineage-mode-test-agent",
-          "model: anthropic/test-lineage",
+          "model: opencode-go/test-lineage",
           "session-mode: lineage-only",
         ].join("\n"),
       );
@@ -1093,7 +1093,7 @@ describe("subagent discovery", () => {
         "interactive-true-test-agent",
         [
           "name: interactive-true-test-agent",
-          "model: anthropic/test-interactive-true",
+          "model: opencode-go/test-interactive-true",
           "interactive: true",
         ].join("\n"),
       );
@@ -1102,7 +1102,7 @@ describe("subagent discovery", () => {
         "interactive-false-test-agent",
         [
           "name: interactive-false-test-agent",
-          "model: anthropic/test-interactive-false",
+          "model: opencode-go/test-interactive-false",
           "interactive: false",
         ].join("\n"),
       );
@@ -1122,7 +1122,7 @@ describe("subagent discovery", () => {
         "interactive-unset-test-agent",
         [
           "name: interactive-unset-test-agent",
-          "model: anthropic/test-interactive-unset",
+          "model: opencode-go/test-interactive-unset",
         ].join("\n"),
       );
 
@@ -1172,8 +1172,8 @@ describe("subagent discovery", () => {
     );
   });
 
-  it("bundled scout/researcher/worker all resolve as non-interactive (auto-exit)", () => {
-    for (const name of ["scout", "researcher", "worker"]) {
+  it("bundled scout/researcher/worker-opus/worker-sol all resolve as non-interactive (auto-exit)", () => {
+    for (const name of ["scout", "researcher", "worker-opus", "worker-sol"]) {
       const defs = testApi.loadAgentDefaults(name);
       assert.ok(defs, `expected bundled agent ${name} to be discoverable`);
       assert.equal(
@@ -1184,9 +1184,9 @@ describe("subagent discovery", () => {
     }
   });
 
-  it("worker is granted the spawning toolset restricted to scout and researcher", () => {
-    const worker = testApi.loadAgentDefaults("worker");
-    assert.ok(worker, "expected bundled worker to be discoverable");
+  it("worker-opus is granted the spawning toolset restricted to scout and researcher", () => {
+    const worker = testApi.loadAgentDefaults("worker-opus");
+    assert.ok(worker, "expected bundled worker-opus to be discoverable");
     assert.deepEqual(worker.subagentAgents, ["scout", "researcher"]);
 
     const allowlist = testApi.buildSubagentToolAllowlist(worker.tools, { grantSpawning: true });
@@ -1222,7 +1222,7 @@ describe("subagent discovery", () => {
         "invalid-mode-test-agent",
         [
           "name: invalid-mode-test-agent",
-          "model: anthropic/test-invalid",
+          "model: opencode-go/test-invalid",
           "session-mode: sideways",
         ].join("\n"),
       );
@@ -1373,7 +1373,7 @@ describe("subagent discovery", () => {
         [
           "name: visible-discovery-test-agent",
           "description: Visible test agent",
-          "model: anthropic/test-visible",
+          "model: opencode-go/test-visible",
         ].join("\n"),
       );
 
@@ -1399,7 +1399,7 @@ describe("subagent discovery", () => {
         [
           "name: hidden-discovery-test-agent",
           "description: Hidden test agent",
-          "model: anthropic/test-hidden",
+          "model: opencode-go/test-hidden",
           "disable-model-invocation: true",
         ].join("\n"),
         "You are the hidden agent.",
@@ -1419,7 +1419,7 @@ describe("subagent discovery", () => {
 
       const loaded = testApi.loadAgentDefaults("hidden-discovery-test-agent");
       assert.ok(loaded, "expected hidden agent to remain directly loadable");
-      assert.equal(loaded.model, "anthropic/test-hidden");
+      assert.equal(loaded.model, "opencode-go/test-hidden");
       assert.equal(loaded.body, "You are the hidden agent.");
       assert.equal(loaded.disableModelInvocation, true);
     });
@@ -1433,7 +1433,7 @@ describe("subagent discovery", () => {
         [
           "name: shadowed-discovery-test-agent",
           "description: Global visible agent",
-          "model: anthropic/test-global",
+          "model: opencode-go/test-global",
         ].join("\n"),
         "You are the global visible agent.",
       );
@@ -1443,7 +1443,7 @@ describe("subagent discovery", () => {
         [
           "name: shadowed-discovery-test-agent",
           "description: Project hidden agent",
-          "model: anthropic/test-project",
+          "model: opencode-go/test-project",
           "disable-model-invocation: true",
         ].join("\n"),
         "You are the project hidden agent.",
@@ -1463,7 +1463,7 @@ describe("subagent discovery", () => {
 
       const loaded = testApi.loadAgentDefaults("shadowed-discovery-test-agent");
       assert.ok(loaded, "expected project override to remain directly loadable");
-      assert.equal(loaded.model, "anthropic/test-project");
+      assert.equal(loaded.model, "opencode-go/test-project");
       assert.equal(loaded.body, "You are the project hidden agent.");
       assert.equal(loaded.disableModelInvocation, true);
     });
@@ -2590,7 +2590,7 @@ describe("subagent display helpers", () => {
 
   describe("contextWindowFor", () => {
     it("maps known model families and returns undefined otherwise", () => {
-      assert.equal(testApi.contextWindowFor("claude-sonnet-4-6"), 200_000);
+      assert.equal(testApi.contextWindowFor("claude-opus-5"), 200_000);
       assert.equal(testApi.contextWindowFor("gemini-2.5-pro"), 1_000_000);
       assert.equal(testApi.contextWindowFor("some-unknown-model"), undefined);
       assert.equal(testApi.contextWindowFor(null), undefined);
@@ -2611,7 +2611,7 @@ describe("subagent display helpers", () => {
   describe("formatUsageSegments", () => {
     it("emits arrow/cache/cost segments, skipping zero fields", () => {
       const segs = testApi.formatUsageSegments({
-        model: "claude-sonnet-4-6",
+        model: "glm-5.3-flash",
         toolCount: 3,
         inputTokens: 3200,
         outputTokens: 890,

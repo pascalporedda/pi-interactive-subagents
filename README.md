@@ -76,9 +76,10 @@ If the reply arrives while the sub-agent is still mid-turn, it is absorbed into 
 
 | Agent | Model | Tools | Role |
 | ----- | ----- | ----- | ---- |
-| **scout** | `openrouter/z-ai/glm-5.3` | `read`, `grep`, `find`, `ls` | Fast read-only codebase recon |
-| **researcher** | `openrouter/z-ai/glm-5.3` | `web_search`, `web_fetch`, `safe_bash` | Web research, synthesized into a sourced brief |
-| **worker** | `openrouter/z-ai/glm-5.3` | `read`, `write`, `edit`, `bash`, `web_search`, `web_fetch` + spawning | General implementer; may spawn `scout` and `researcher` |
+| **scout** | `opencode-go/glm-5.3-flash` | `read`, `grep`, `find`, `ls` | Fast read-only codebase recon |
+| **researcher** | `opencode-go/glm-5.3-flash` | `web_search`, `web_fetch`, `safe_bash` | Web research, synthesized into a sourced brief |
+| **worker-opus** | `global.anthropic.claude-opus-5` | `read`, `write`, `edit`, `bash`, `web_search`, `web_fetch` + spawning | General implementer on Opus (thinking: high); may spawn `scout` and `researcher` |
+| **worker-sol** | `global.openai.gpt-5.6-sol` | `read`, `write`, `edit`, `bash`, `web_search`, `web_fetch` + spawning | General implementer on GPT-5.6 Sol (thinking: medium); may spawn `scout` and `researcher` |
 
 All three are autonomous (`auto-exit: true`) and carry their identity in the system prompt (`system-prompt: append`).
 
@@ -90,7 +91,7 @@ Place a `.md` file in `.pi/agents/` (project) or `~/.pi/agent/agents/` (global).
 ---
 name: my-agent
 description: Does something specific
-model: openrouter/z-ai/glm-5.3
+model: opencode-go/glm-5.3-flash
 thinking: medium
 tools: read, edit, write, safe_bash, web_search
 session-mode: lineage-only
