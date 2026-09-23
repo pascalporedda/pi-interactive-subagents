@@ -78,7 +78,7 @@ If the reply arrives while the sub-agent is still mid-turn, it is absorbed into 
 | ----- | ----- | ----- | ---- |
 | **scout** | `opencode-go/glm-5.3-flash` | `read`, `grep`, `find`, `ls` | Fast read-only codebase recon |
 | **researcher** | `opencode-go/glm-5.3-flash` | `web_search`, `web_fetch`, `safe_bash` | Web research, synthesized into a sourced brief |
-| **worker-opus** | `global.anthropic.claude-opus-5` | `read`, `write`, `edit`, `bash`, `web_search`, `web_fetch` + spawning | General implementer on Opus (thinking: high); may spawn `scout` and `researcher` |
+| **worker-opus** | `global.anthropic.claude-opus-5-5` | `read`, `write`, `edit`, `bash`, `web_search`, `web_fetch` + spawning | General implementer on Opus 5.5 (thinking: high); may spawn `scout` and `researcher` |
 | **worker-sol** | `global.openai.gpt-5.6-sol` | `read`, `write`, `edit`, `bash`, `web_search`, `web_fetch` + spawning | General implementer on GPT-5.6 Sol (thinking: medium); may spawn `scout` and `researcher` |
 
 All three are autonomous (`auto-exit: true`) and carry their identity in the system prompt (`system-prompt: append`).

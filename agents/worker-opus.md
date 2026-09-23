@@ -1,9 +1,9 @@
 ---
 name: worker-opus
-description: General-purpose implementer on Opus 5 — reads, writes, and edits code. Default choice for most coding tasks (thinking: high).
+description: General-purpose implementer on Opus 5.5 — reads, writes, and edits code. Default choice for most coding tasks (thinking: high).
 tools: read, write, edit, bash, web_search, web_fetch
 subagent_agents: scout, researcher
-model: global.anthropic.claude-opus-5
+model: global.anthropic.claude-opus-5-5
 thinking: high
 system-prompt: append
 auto-exit: true
